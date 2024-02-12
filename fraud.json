@@ -1,0 +1,133 @@
+{
+    "generators": [
+        {
+            "stream": "accounts",
+            "row": {
+                "accountId": {
+                    "_gen": "sequentialInteger"
+                } ,
+                "name": {
+                    "_gen": "string",
+                    "expr": "#{Name.fullName}"
+                    
+                },
+                "accountType": {
+                    "_gen": "oneOf",
+                    "choices": ["checking", "savings"]
+                }
+            },
+            "localConfigs": {
+                "throttle": {
+                    "ms": 500
+                }
+            }
+        },
+        {
+            "stream": "transactions",
+            "row": {
+                "transactionId": {
+                    "_gen": "uuid"
+                },
+                "accountId": {
+                    "_gen": "lookup",
+                    "stream": "accounts",
+                    "path": ["accountId"]
+                },
+                "amount": {
+                    "_gen": "weightedOneOf",
+                    "choices": [
+                        {
+                            "weight": 19,
+                            "value": {
+                                "_gen": "uniformDistribution",
+                                "bounds": [1, 300]
+                            }
+                        },
+                        {
+                            "weight": 1,
+                            "value": {
+                                "_gen": "normalDistribution",
+                                "mean": 3000,
+                                "sd": 500
+                            }
+                        }
+                    ]
+                },
+                "transactionCategory": {
+                    "_gen": "string",
+                    "expr": "#{Commerce.department}"
+                },
+                "timestamp": {
+                    "_gen": "now"
+                }
+            },
+            "localConfigs": {
+                "throttle": {
+                    "ms": 150
+                }
+            }
+        },
+        {
+            "stream": "logins",
+            "fork": {
+                "key": {
+                    "_gen": "lookup",
+                    "stream": "accounts",
+                    "path": ["accountId"]
+                },
+                "staggerMs": 500
+            },
+            "varsOnce": {
+                "ip": {
+                    "_gen": "string",
+                    "expr": "#{Internet.ipV4Address}"
+                }
+            },
+            "row": {
+                "accountId": {
+                    "_gen": "var",
+                    "var": "forkKey"
+                },
+                "ip": {
+                    "_gen": "weightedOneOf",
+                    "choices": [
+                        {
+                            "weight": 99,
+                            "value": {
+                                "_gen": "var",
+                                "var": "ip"
+                            }
+                        },
+                        {
+                            "weight": 1,
+                            "value": {
+                                "_gen": "string",
+                                "expr": "#{Internet.ipV4Address}"
+                            }
+                        }
+                    ]
+                },
+                "timestamp": {
+                    "_gen": "now"
+                }
+            },
+            "localConfigs": {
+                "throttle": {
+                    "ms": 500
+                }
+            }
+        }
+    ],
+    "connections": {
+        "proton": {
+            "kind": "proton",
+            "connectionConfigs": {
+                "host": "localhost",
+                "port": 8123,
+                "username": "default",
+                "password": "",
+                "db": "default"
+            }
+        }
+    }
+}

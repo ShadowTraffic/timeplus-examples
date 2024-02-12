@@ -1,0 +1,102 @@
+{
+    "generators": [
+        {
+            "stream": "games",
+            "fork": {
+                "key": {
+                    "_gen": "sequentialString",
+                    "expr": "game-~d"
+                },
+                "stagger": {
+                    "ms": {
+                        "_gen": "normalDistribution",
+                        "mean": 2000,
+                        "sd": 500
+                    }
+                }
+            },
+            "row": {
+                "gameId": { "_gen": "var", "var": "forkKey" },
+                "timestamp": {
+                    "_gen": "now"
+                }
+            },
+            "stateMachine": {
+                "_gen": "stateMachine",
+                "initial": "schedule",
+                "transitions": {
+                    "schedule": "start",
+                    "start": "end"
+                },
+                "states": {
+                    "schedule": {
+                        "value": {
+                            "status": "scheduled"
+                        }
+                    },
+                    "start": {
+                        "value": {
+                            "status": "started"
+                        }
+                    },
+                    "end": {
+                        "value": {
+                            "status": "ended"
+                        }
+                    }
+                }
+            },
+            "localConfigs": {
+                "throttle": {
+                    "ms": {
+                        "_gen": "uniformDistribution",
+                        "bounds": [500, 5000]
+                    }
+                }
+            }
+        },
+        {
+            "stream": "bets",
+            "row": {
+                "gameId": {
+                    "_gen": "lookup",
+                    "stream": "games",
+                    "path": ["gameId"]
+                },
+                "betType": {
+                    "_gen": "oneOf",
+                    "choices": ["win", "lose", "tie"]
+                },
+                "betAmount": {
+                    "_gen": "normalDistribution",
+                    "mean": 200,
+                    "sd": 20
+                },
+                "timestamp": {
+                    "_gen": "now"
+                }
+            },
+            "localConfigs": {
+                "throttle": {
+                    "ms": {
+                        "_gen": "uniformDistribution",
+                        "bounds": [200, 600]
+                    }
+
+                }
+            }
+        }
+    ],
+    "connections": {
+        "proton": {
+            "kind": "proton",
+            "connectionConfigs": {
+                "host": "localhost",
+                "port": 8123,
+                "username": "default",
+                "password": "",
+                "db": "default"
+            }
+        }
+    }
+}

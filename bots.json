@@ -1,0 +1,171 @@
+{
+    "generators": [
+        {
+            "stream": "users",
+            "row": {
+                "id": { "_gen": "uuid" },
+                "username": {
+                    "_gen": "string",
+                    "expr": "#{Name.username}"
+                },
+                "updatedAt": {
+                    "_gen": "now"
+                },
+                "followerCount": {
+                    "_gen": "integer",
+                    "n": {
+                        "_gen": "uniformDistribution",
+                        "bounds": [0, 2000]
+                    }
+                },
+                "followingCount": {
+                    "_gen": "integer",
+                    "n": {
+                        "_gen": "normalDistribution",
+                        "mean": 500,
+                        "sd": 200
+                    }
+                }
+            },
+            "localConfigs": {
+                "throttle": {
+                    "ms": 1000
+                }
+            }
+        },
+        {
+            "stream": "posts",
+            "fork": {
+                "key": {
+                    "_gen": "uuid"
+                },
+                "stagger": {
+                    "ms": {
+                        "_gen": "uniformDistribution",
+                        "bounds": [15, 50]
+                    }
+                }
+            },
+            "row": {
+                "postId": { "_gen": "var", "var": "forkKey" },
+                "by": {
+                    "_gen": "lookup",
+                    "stream": "users",
+                    "path": ["id"]
+                },
+                "content": {
+                    "_gen": "string",
+                    "expr": "#{Lorem.paragraph}"
+                },
+                "timestamp": {
+                    "_gen": "now"
+                }
+            },
+            "stateMachine": {
+                "_gen": "stateMachine",
+                "initial": "post",
+                "transitions": {
+                    "post": {
+                        "_gen": "weightedOneOf",
+                        "choices": [
+                            { "weight": 18, "value": "exit" },
+                            { "weight": 1, "value": "like" },
+                            { "weight": 1, "value": "share" }
+                        ]
+                    },
+                    "like": {
+                        "_gen": "weightedOneOf",
+                        "choices": [
+                            { "weight": 18, "value": "exit" },
+                            { "weight": 1, "value": "like" },
+                            { "weight": 1, "value": "share" }
+                        ]
+                    },
+                    "share":{
+                        "_gen": "weightedOneOf",
+                        "choices": [
+                            { "weight": 18, "value": "exit" },
+                            { "weight": 1, "value": "like" },
+                            { "weight": 1, "value": "share" }
+                        ]
+                    }
+                },
+                "states": {
+                    "post": {
+                        "row": {
+                            "likes": 0,
+                            "shares": 0
+                        }
+                    },
+                    "like": {
+                        "row": {
+                            "_gen": "merge",
+                            "objects": [
+                                { "_gen": "previousEvent", "path": [ "row" ] },
+                                {
+                                    "likes": {
+                                        "_gen": "add", "args": [
+                                            { "_gen": "previousEvent", "path": ["row", "likes"] },
+                                            1
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "share": {
+                        "row": {
+                            "_gen": "merge",
+                            "objects": [
+                                { "_gen": "previousEvent", "path": [ "row" ] },
+                                {
+                                    "shares": {
+                                        "_gen": "add", "args": [
+                                            { "_gen": "previousEvent", "path": ["row", "shares"] },
+                                            1
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "localConfigs": {
+                "throttle": {
+                    "ms": {
+                        "_gen": "normalDistribution",
+                        "mean": 50,
+                        "sd": 20
+                    }
+                },
+                "delay": {
+                    "rate": 0.1,
+                    "ms": {
+                        "_gen": "uniformDistribution",
+                        "bounds": [200, 800]
+                    }
+                },
+		"discard": {
+		    "rate": 0.02
+		},
+                "repeat": {
+                    "rate": 0.05,
+                    "times": 2
+                }
+            }
+        }
+    ],
+    "connections": {
+        "proton": {
+            "kind": "proton",
+            "connectionConfigs": {
+                "host": "localhost",
+                "port": 8123,
+                "username": "default",
+                "password": "",
+                "db": "default"
+            }
+        }
+    }
+}

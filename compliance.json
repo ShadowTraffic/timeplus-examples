@@ -1,0 +1,86 @@
+{
+    "generators": [
+        {
+            "stream": "merchants",
+            "row": {
+                "merchantId": {
+                    "_gen": "sequentialString",
+                    "expr": "merchant-~d"
+                },
+                "name": {
+                    "_gen": "string",
+                    "expr": "#{Company.name}"
+                },
+                "location": {
+                    "_gen": "string",
+                    "expr": "#{Address.latitude}, #{Address.longitude}"
+                }
+            },
+            "localConfigs": {
+                "throttle": {
+                    "ms": {
+                        "_gen": "uniformDistribution",
+                        "bounds": [500, 2000]
+                    }
+                },
+                "events": {
+                    "exactly": 200
+                }
+            }
+        },
+        {
+            "stream": "audits",
+            "row": {
+                "against": {
+                    "_gen": "lookup",
+                    "stream": "merchants",
+                    "path": ["merchantId"]
+                },
+                "auditDate": {
+                    "_gen": "formatDateTime",
+                    "format": "yyy-MM-dd",
+                    "ms": {
+                        "_gen": "subtract",
+                        "args": [
+                            {
+                                "_gen": "now"
+                            },
+                            {
+                                "_gen": "uniformDistribution",
+                                "bounds": [604800000, 2592000000]
+                            }
+                        ]
+                    }
+                },
+                "findings": {
+                    "_gen": "weightedOneOf",
+                    "choices": [
+                        { "weight": 9, "value": "Acceptable" },
+                        { "weight": 1, "value": "KYC violation" }
+                    ]
+                }
+            },
+            "localConfigs": {
+                "throttle": {
+                    "ms": {
+                        "_gen": "normalDistribution",
+                        "mean": 2160000000,
+                        "sd": 500000
+                    }
+                }
+            }
+        }
+    ],
+    "connections": {
+        "proton": {
+            "kind": "proton",
+            "connectionConfigs": {
+                "host": "localhost",
+                "port": 8123,
+                "username": "default",
+                "password": "",
+                "db": "default"
+            }
+        }
+    }
+}
