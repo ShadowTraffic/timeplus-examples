@@ -1,7 +1,7 @@
 {
     "name": "ddos",
     "image": "shadowtraffic/shadowtraffic:latest",
-    "postAttachCommand": "source free-trial-license.env && java -jar /home/shadowtraffic.jar --config /workspaces/shadowtraffic-examples/ddos.json --sample 10 --stdout --watch",
+    "postAttachCommand": "source free-trial-license.env && java -jar /home/shadowtraffic.jar --config /workspaces/timeplus-examples/ddos.json --sample 10 --stdout --watch",
     "customizations": {
         "codespaces": {
             "openFiles": [

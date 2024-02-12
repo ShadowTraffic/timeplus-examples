@@ -1,7 +1,7 @@
 {
     "name": "bots",
     "image": "shadowtraffic/shadowtraffic:latest",
-    "postAttachCommand": "source free-trial-license.env && java -jar /home/shadowtraffic.jar --config /workspaces/shadowtraffic-examples/bots.json --sample 10 --stdout --watch",
+    "postAttachCommand": "source free-trial-license.env && java -jar /home/shadowtraffic.jar --config /workspaces/timeplus-examples/bots.json --sample 10 --stdout --watch",
     "customizations": {
         "codespaces": {
             "openFiles": [
